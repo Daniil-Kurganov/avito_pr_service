@@ -1,8 +1,33 @@
 package http
 
-import "github.com/gin-gonic/gin"
+import (
+	"avito_pr_service/src/conf"
+	"avito_pr_service/src/usecase"
+	"fmt"
+	"net/http"
 
-func addTeam(gctx *gin.Context) {}
+	"github.com/gin-gonic/gin"
+)
+
+type (
+	error struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}
+	errorResponse struct {
+		Error error `json:"error"`
+	}
+)
+
+func addTeam(gctx *gin.Context) {
+	conf.Logger.Debug(fmt.Sprintf("%s: add new team request", conf.LogHeaders.HTTPServer))
+	var team usecase.Team
+	if err := gctx.ShouldBindBodyWithJSON(&team); err != nil {
+		conf.Logger.Error(fmt.Sprintf("%s: error on binding requst body: %v", err))
+		gctx.Status(http.StatusInternalServerError)
+	}
+	// TODO: call logic method and response creation
+}
 
 func getTeam(gctx *gin.Context) {}
 
