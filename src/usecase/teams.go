@@ -28,5 +28,6 @@ func (t *Team) Add() (err error) {
 	if err = t.validate(); err != nil {
 		return err
 	}
+	// DB work
 	return
 }

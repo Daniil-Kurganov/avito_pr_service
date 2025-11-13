@@ -27,6 +27,10 @@ func addTeam(gctx *gin.Context) {
 		gctx.Status(http.StatusInternalServerError)
 	}
 	// TODO: call logic method and response creation
+	if err := team.Add(); err != nil {
+		// TEAM EXIST validation
+	}
+	gctx.JSON(http.StatusCreated, team)
 }
 
 func getTeam(gctx *gin.Context) {}
