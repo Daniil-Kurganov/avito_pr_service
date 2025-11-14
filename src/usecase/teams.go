@@ -1,6 +1,13 @@
 package usecase
 
-import "fmt"
+import (
+	"avito_pr_service/src/conf"
+	"avito_pr_service/src/db"
+	"context"
+	"fmt"
+
+	"github.com/jackc/pgx/v5/pgconn"
+)
 
 type (
 	TeamMember struct {
@@ -25,9 +32,14 @@ func (t *Team) validate() error {
 }
 
 func (t *Team) Add() (err error) {
-	if err = t.validate(); err != nil {
-		return err
+	// if err = t.validate(); err != nil {
+	// 	return err
+	// }
+	var result pgconn.CommandTag
+	if result, err = db.Connection.Exec(context.Background(), "insert into teams (name) values ($1)", t.TeamName); err != nil {
+		err = fmt.Errorf("error on add new team: %w", err)
+		return
 	}
-	// DB work
+	conf.Logger.Debug(fmt.Sprintf("%s: number added rows: %d", conf.LogHeaders.Usecase, result.RowsAffected()))
 	return
 }

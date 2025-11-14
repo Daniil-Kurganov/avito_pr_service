@@ -5,15 +5,30 @@ import (
 	"os"
 )
 
-const ServerHTTPServeSocket = "127.0.0.1:8080"
+const (
+	ServerHTTPServeSocket = "127.0.0.1:8080"
+
+	PSQLUser, PSQLPassword, PSQLDBName, PSQLSSLMode = "postgres", "postgres", "avito_pr_service", "disable"
+)
 
 var (
 	Logger *slog.Logger
 
+	OSExitCode = struct {
+		InvalidFunction int
+		InvalidHandle   int
+	}{
+		InvalidFunction: 1,
+		InvalidHandle:   6,
+	}
 	LogHeaders = struct {
 		HTTPServer string
+		PSQL       string
+		Usecase    string
 	}{
 		HTTPServer: "[HTTP server]",
+		PSQL:       "[PostgreSQL]",
+		Usecase:    "[Usecase]",
 	}
 )
 
