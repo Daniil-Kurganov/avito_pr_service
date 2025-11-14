@@ -9,9 +9,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const TeamNameLenght = 50
+
 var Connection *pgx.Conn
 
-func init() {
+func Connect() {
 	connectionURL := fmt.Sprintf("postgres://%s:%s@localhost:5433/%s",
 		conf.PSQLUser, conf.PSQLPassword, conf.PSQLDBName)
 	var err error

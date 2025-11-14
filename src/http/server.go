@@ -10,7 +10,7 @@ import (
 	reuse "github.com/libp2p/go-reuseport"
 )
 
-func StartHTTPServer() *net.Listener {
+func StartHTTPServer() net.Listener {
 	router := gin.Default()
 	team := router.Group("team")
 	{
@@ -39,5 +39,5 @@ func StartHTTPServer() *net.Listener {
 		os.Exit(1)
 	}
 	conf.Logger.Info("HTTP-server has been started")
-	return &listener
+	return listener
 }
