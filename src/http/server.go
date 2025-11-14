@@ -2,15 +2,18 @@ package http
 
 import (
 	"avito_pr_service/src/conf"
+	"avito_pr_service/src/db"
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	reuse "github.com/libp2p/go-reuseport"
 )
 
-func StartHTTPServer() net.Listener {
+func StartHTTPServer() {
 	router := gin.Default()
 	team := router.Group("team")
 	{
@@ -39,5 +42,17 @@ func StartHTTPServer() net.Listener {
 		os.Exit(1)
 	}
 	conf.Logger.Info("HTTP-server has been started")
-	return listener
+	go func() {
+		osSignals := make(chan os.Signal, 1)
+		signal.Notify(osSignals, syscall.SIGINT, syscall.SIGTERM)
+		acceptedSignal := <-osSignals
+		close(osSignals)
+		conf.Logger.Info(fmt.Sprintf("Accepted OS %s signal", acceptedSignal.String()))
+		if err := listener.Close(); err != nil {
+			conf.Logger.Error(fmt.Sprintf("Error on closing HTTP-server: %v", err))
+		}
+		if err := db.CloseConnection(); err != nil {
+			conf.Logger.Error(fmt.Sprintf("Error on closing DB connection: %v", err))
+		}
+	}()
 }

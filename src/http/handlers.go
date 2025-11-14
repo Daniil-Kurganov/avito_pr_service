@@ -36,12 +36,37 @@ func addTeam(gctx *gin.Context) {
 			}})
 			return
 		}
-		gctx.JSON(http.StatusInternalServerError, nil)
+		gctx.AbortWithError(http.StatusInternalServerError, err)
 	}
 	gctx.JSON(http.StatusCreated, team)
 }
 
-func getTeam(gctx *gin.Context) {}
+func getTeam(gctx *gin.Context) {
+	conf.Logger.Debug(fmt.Sprintf("%s: get team request", conf.LogHeaders.HTTPServer))
+	var teamName string
+	var ok bool
+	if teamName, ok = gctx.GetQuery("team_name"); !ok {
+		err := errors.New("''team_name'' is required query parameter")
+		conf.Logger.Error(fmt.Sprintf("%s: %v", conf.LogHeaders.HTTPServer, err))
+		gctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	team := usecase.Team{TeamName: teamName}
+	if err := team.Get(); err != nil {
+		conf.Logger.Error("%s: error on getting team data: %v", conf.LogHeaders.HTTPServer, err)
+		gctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if len(team.Members) == 0 {
+		gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
+			Code:    "NOT_FOUND",
+			Message: "resource not found",
+		}})
+		return
+	}
+	conf.Logger.Debug(fmt.Sprintf("%s: current team - %v", conf.LogHeaders.HTTPServer, team))
+	gctx.JSON(http.StatusOK, team)
+}
 
 func setActiveUser(gctx *gin.Context) {}
 

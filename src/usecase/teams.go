@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type (
@@ -22,7 +24,10 @@ type (
 	customError error
 )
 
-var ErrorTeamDuplication customError = errors.New("ОШИБКА: повторяющееся значение ключа нарушает ограничение уникальности \"teams_name_key\" (SQLSTATE 23505)")
+var (
+	ErrorTeamDuplication customError = errors.New("ОШИБКА: повторяющееся значение ключа нарушает ограничение уникальности \"teams_name_key\" (SQLSTATE 23505)")
+	ErrorTeamNotFound    customError = errors.New("team with this name not found")
+)
 
 func (tm *TeamMember) add(teamId int64) (err error) {
 	if _, err = db.Connection.Exec(context.Background(),
@@ -51,5 +56,24 @@ func (t *Team) Add() (err error) {
 		return
 	}
 	conf.Logger.Info(fmt.Sprintf("%s: new team successfully added", conf.LogHeaders.Usecase))
+	return
+}
+
+func (t *Team) Get() (err error) {
+	var rows pgx.Rows
+	if rows, err = db.Connection.Query(context.Background(),
+		"select user_id, username, is_active from users where team_id=(select id from teams where name=$1)", t.TeamName); err != nil {
+		err = fmt.Errorf("error on select data: %w", err)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var currentMember TeamMember
+		if err = rows.Scan(&currentMember.UserId, &currentMember.Username, &currentMember.IsActive); err != nil {
+			err = fmt.Errorf("error on parsing members data: %w", err)
+			return
+		}
+		t.Members = append(t.Members, currentMember)
+	}
 	return
 }
