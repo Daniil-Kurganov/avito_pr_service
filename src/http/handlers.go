@@ -25,7 +25,8 @@ func addTeam(gctx *gin.Context) {
 	var team usecase.Team
 	if err := gctx.ShouldBindJSON(&team); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on binding requst body: %v", conf.LogHeaders.HTTPServer, err))
-		gctx.Status(http.StatusInternalServerError)
+		gctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 	if err := team.Add(); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on adding new team: %v", conf.LogHeaders.HTTPServer, err))
@@ -37,6 +38,7 @@ func addTeam(gctx *gin.Context) {
 			return
 		}
 		gctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 	gctx.JSON(http.StatusCreated, team)
 }
@@ -68,7 +70,34 @@ func getTeam(gctx *gin.Context) {
 	gctx.JSON(http.StatusOK, team)
 }
 
-func setActiveUser(gctx *gin.Context) {}
+func setActiveUser(gctx *gin.Context) {
+	type response struct {
+		usecase.TeamMember
+		TeamName string `json:"team_name"`
+	}
+
+	conf.Logger.Debug(fmt.Sprintf("%s: set user active request", conf.LogHeaders.HTTPServer))
+	var user usecase.TeamMember
+	var err error
+	if err = gctx.ShouldBindJSON(&user); err != nil {
+		conf.Logger.Error(fmt.Sprintf("%s: error on binding requst body: %v", conf.LogHeaders.HTTPServer, err))
+		gctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	fullUserData := response{TeamMember: user}
+	if fullUserData.TeamName, err = user.SetActive(); err != nil {
+		conf.Logger.Error(fmt.Sprintf("%s: error on set active user: %v", conf.LogHeaders.HTTPServer, err))
+		if errors.As(err, &usecase.ErrorNotFound) {
+			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
+				Code:    "NOT_FOUND",
+				Message: "resource not found",
+			}})
+			return
+		}
+		return
+	}
+	gctx.JSON(http.StatusOK, fullUserData)
+}
 
 func getUsersRewie(gctx *gin.Context) {}
 

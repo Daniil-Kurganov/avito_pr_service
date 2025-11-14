@@ -1,7 +1,6 @@
 package main
 
 import (
-	"avito_pr_service/src/usecase"
 	"bytes"
 	"encoding/json"
 	"log"
@@ -10,28 +9,37 @@ import (
 )
 
 func main() {
-	newTeam := usecase.Team{
-		TeamName: "payment",
-		Members: []usecase.TeamMember{
-			{
-				UserId:   "u1",
-				Username: "Aleksey",
-				IsActive: true,
-			},
-			{
-				UserId:   "u2",
-				Username: "Julia",
-				IsActive: true,
-			},
-		},
+	// newTeam := usecase.Team{ // team/add
+	// 	TeamName: "building",
+	// 	Members: []usecase.TeamMember{
+	// 		{
+	// 			UserId:   "u3",
+	// 			Username: "Sofia",
+	// 			IsActive: true,
+	// 		},
+	// 		{
+	// 			UserId:   "u4",
+	// 			Username: "Mark",
+	// 			IsActive: true,
+	// 		},
+	// 	},
+	// }
+
+	userActiveUpdation := struct { // users/setIsActive
+		UserID   string `json:"user_id"`
+		IsActive bool   `json:"is_active"`
+	}{
+		UserID:   "u5",
+		IsActive: true,
 	}
-	var newTeamJSONData []byte
+
+	var newData []byte
 	var err error
-	if newTeamJSONData, err = json.Marshal(newTeam); err != nil {
-		log.Fatalf("Error on marshaling team data: %v", err)
+	if newData, err = json.Marshal(userActiveUpdation); err != nil {
+		log.Fatalf("Error on marshaling data: %v", err)
 	}
 	var request *http.Request
-	if request, err = http.NewRequest("POST", "http://127.0.0.1:8080/team/add", bytes.NewBuffer(newTeamJSONData)); err != nil {
+	if request, err = http.NewRequest("POST", "http://127.0.0.1:8080/users/setIsActive", bytes.NewBuffer(newData)); err != nil {
 		log.Fatalf("Error on creation request: %v", err)
 	}
 	request.Header.Set("Content-Type", "application/json")

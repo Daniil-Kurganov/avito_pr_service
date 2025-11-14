@@ -12,9 +12,9 @@ import (
 
 type (
 	TeamMember struct {
-		UserId   string `json:"user_id" binding:"required"`
-		Username string `json:"username" binding:"required"`
-		IsActive bool   `json:"is_active" binding:"required"`
+		UserId   string `json:"user_id"`
+		Username string `json:"username"`
+		IsActive bool   `json:"is_active"`
 	}
 	Team struct {
 		TeamName string       `json:"team_name" binding:"required"`
@@ -26,7 +26,7 @@ type (
 
 var (
 	ErrorTeamDuplication customError = errors.New("ОШИБКА: повторяющееся значение ключа нарушает ограничение уникальности \"teams_name_key\" (SQLSTATE 23505)")
-	ErrorTeamNotFound    customError = errors.New("team with this name not found")
+	ErrorNotFound        customError = errors.New("no rows in result set")
 )
 
 func (tm *TeamMember) add(teamId int64) (err error) {
@@ -34,6 +34,19 @@ func (tm *TeamMember) add(teamId int64) (err error) {
 		"insert into users (user_id, username, team_id, is_active) values ($1, $2, $3, $4)",
 		tm.UserId, tm.Username, teamId, tm.IsActive); err != nil {
 		err = fmt.Errorf("error on inserting new user: %w", err)
+	}
+	return
+}
+
+func (tm *TeamMember) SetActive() (teamName string, err error) {
+	if err = db.Connection.QueryRow(context.Background(),
+		`with updated as (
+			update users set is_active=$1 where user_id=$2 returning username, team_id
+		) select username, name from updated, teams where teams.id=updated.team_id`,
+		tm.IsActive, tm.UserId).
+		Scan(&tm.Username, &teamName); err != nil {
+		err = fmt.Errorf("error on updation user action: %w", err)
+		return
 	}
 	return
 }
