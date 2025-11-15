@@ -10,13 +10,21 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type PullRequest struct {
-	PullRequestId     string   `json:"pull_request_id"`
-	PullRequestName   string   `json:"pull_request_name"`
-	AuthorId          string   `json:"author_id"`
-	Status            string   `json:"status"`
-	AssignedReviewers []string `json:"assigned_reviewers"`
-}
+type (
+	PullRequest struct {
+		PullRequestId     string   `json:"pull_request_id"`
+		PullRequestName   string   `json:"pull_request_name"`
+		AuthorId          string   `json:"author_id"`
+		Status            string   `json:"status"`
+		AssignedReviewers []string `json:"assigned_reviewers"`
+	}
+	ShortPullRequest struct {
+		PullRequestId   string `json:"pull_request_id"`
+		PullRequestName string `json:"pull_request_name"`
+		AuthorId        string `json:"author_id"`
+		Status          string `json:"status"`
+	}
+)
 
 var (
 	ErrorAuthorTeamNotFound customError = errors.New("author or his teammates not found")

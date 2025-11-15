@@ -99,7 +99,31 @@ func setActiveUser(gctx *gin.Context) {
 	gctx.JSON(http.StatusOK, fullUserData)
 }
 
-func getUsersRewie(gctx *gin.Context) {}
+func getUsersRewie(gctx *gin.Context) {
+	type response struct {
+		UserId       string                     `json:"user_id"`
+		PullRequests []usecase.ShortPullRequest `json:"pull_requests"`
+	}
+
+	conf.Logger.Debug(fmt.Sprintf("%s: get user's PR requets", conf.LogHeaders.HTTPServer))
+	var userId string
+	var ok bool
+	if userId, ok = gctx.GetQuery("user_id"); !ok {
+		err := errors.New("''user_id'' is required query parameter")
+		conf.Logger.Error(fmt.Sprintf("%s: %v", conf.LogHeaders.HTTPServer, err))
+		gctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	user := usecase.TeamMember{UserId: userId}
+	userPRData := response{UserId: userId}
+	var err error
+	if userPRData.PullRequests, err = user.GetRewiew(); err != nil {
+		conf.Logger.Error(fmt.Sprintf("%s: %v", conf.LogHeaders.HTTPServer, err))
+		gctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	gctx.JSON(http.StatusOK, userPRData)
+}
 
 func createPullRequest(gctx *gin.Context) {
 	conf.Logger.Debug(fmt.Sprintf("%s: create PR request", conf.LogHeaders.HTTPServer))

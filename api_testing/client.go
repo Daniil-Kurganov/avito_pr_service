@@ -38,8 +38,8 @@ func main() {
 		PullRequestName string `json:"pull_request_name"`
 		AuthorId        string `json:"author_id"`
 	}{
-		PullRequestId:   "pr-1",
-		PullRequestName: "Module v1",
+		PullRequestId:   "pr-2",
+		PullRequestName: "Module v2",
 		AuthorId:        "u1",
 	}
 

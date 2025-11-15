@@ -51,6 +51,25 @@ func (tm *TeamMember) SetActive() (teamName string, err error) {
 	return
 }
 
+func (tm *TeamMember) GetRewiew() (prData []ShortPullRequest, err error) {
+	var rows pgx.Rows
+	if rows, err = db.Connection.Query(context.Background(),
+		"select pr_id, pr_name, author_id, status from pull_requests where assigned_reviewers @> $1", fmt.Sprintf("{\"%s\"}", tm.UserId)); err != nil {
+		err = fmt.Errorf("error on getting user's PR: %w", err)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var currentPR ShortPullRequest
+		if err = rows.Scan(&currentPR.PullRequestId, &currentPR.PullRequestName, &currentPR.AuthorId, &currentPR.Status); err != nil {
+			err = fmt.Errorf("error on parsing PR data: %w", err)
+			return
+		}
+		prData = append(prData, currentPR)
+	}
+	return
+}
+
 func (t *Team) Add() (err error) {
 	var teamId int64
 	if err = db.Connection.QueryRow(context.Background(), "insert into teams (name) values ($1) returning id", t.TeamName).Scan(&teamId); err != nil {
