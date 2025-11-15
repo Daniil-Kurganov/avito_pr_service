@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -29,6 +30,8 @@ type (
 var (
 	ErrorAuthorTeamNotFound customError = errors.New("author or his teammates not found")
 	ErrorPRDuplication      customError = errors.New("ОШИБКА: повторяющееся значение ключа нарушает ограничение уникальности \"pull_requests_pkey\" (SQLSTATE 23505)")
+	ErrorPRDidntMerged      customError = errors.New("cannot scan NULL into *time.Time")
+	ErrorPRNotFound         customError = errors.New("no rows in result set")
 )
 
 func (pr *PullRequest) Create() (err error) {
@@ -65,5 +68,31 @@ func (pr *PullRequest) Create() (err error) {
 		err = fmt.Errorf("error on inserting new PR data: %w", err)
 		return
 	}
+	return
+}
+
+func (pr *PullRequest) Merge() (transactionTime time.Time, err error) {
+	const mergedStatus = "MERGED"
+
+	var row pgx.Row
+	row = db.Connection.QueryRow(context.Background(),
+		"select pr_name, author_id, assigned_reviewers, merged_at, status from pull_requests where pr_id = $1", pr.PullRequestId)
+	if err = row.Scan(&pr.PullRequestName, &pr.AuthorId, &pr.AssignedReviewers, &transactionTime, &pr.Status); err != nil {
+		if !errors.As(err, &ErrorPRDidntMerged) {
+			err = fmt.Errorf("error on getting PR data: %w", err)
+			return
+		}
+	}
+	if pr.Status == mergedStatus {
+		return
+	}
+	row = db.Connection.QueryRow(context.Background(),
+		"update pull_requests set status = $1, merged_at = NOW() where pr_id = $2 returning merged_at",
+		mergedStatus, pr.PullRequestId)
+	if err = row.Scan(&transactionTime); err != nil {
+		err = fmt.Errorf("error on updation PR data: %w", err)
+		return
+	}
+	pr.Status = mergedStatus
 	return
 }

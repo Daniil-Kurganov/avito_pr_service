@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -33,23 +34,29 @@ func main() {
 	// 	IsActive: true,
 	// }
 
-	prCreation := struct { // pullRequest/create
-		PullRequestId   string `json:"pull_request_id"`
-		PullRequestName string `json:"pull_request_name"`
-		AuthorId        string `json:"author_id"`
+	// prCreation := struct { // pullRequest/create
+	// 	PullRequestId   string `json:"pull_request_id"`
+	// 	PullRequestName string `json:"pull_request_name"`
+	// 	AuthorId        string `json:"author_id"`
+	// }{
+	// 	PullRequestId:   "pr-3",
+	// 	PullRequestName: "Pay cards",
+	// 	AuthorId:        "u2",
+	// }
+
+	prMerge := struct { // pullRequest/merge
+		PullRequestId string `json:"pull_request_id"`
 	}{
-		PullRequestId:   "pr-2",
-		PullRequestName: "Module v2",
-		AuthorId:        "u1",
+		PullRequestId: "pr-3",
 	}
 
 	var newData []byte
 	var err error
-	if newData, err = json.Marshal(prCreation); err != nil {
+	if newData, err = json.Marshal(prMerge); err != nil {
 		log.Fatalf("Error on marshaling data: %v", err)
 	}
 	var request *http.Request
-	if request, err = http.NewRequest("POST", "http://127.0.0.1:8080/pullRequest/create", bytes.NewBuffer(newData)); err != nil {
+	if request, err = http.NewRequest("POST", "http://127.0.0.1:8080/pullRequest/merge", bytes.NewBuffer(newData)); err != nil {
 		log.Fatalf("Error on creation request: %v", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
@@ -59,5 +66,7 @@ func main() {
 		log.Fatalf("Error on sending request: %v", err)
 	}
 	log.Printf("Response: status - %s", response.Status)
+	bodyBytes, _ := io.ReadAll(response.Body)
+	log.Printf("Response body: %s", string(bodyBytes))
 	response.Body.Close()
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -155,6 +156,37 @@ func createPullRequest(gctx *gin.Context) {
 	}
 }
 
-func mergePullRequest(gctx *gin.Context) {}
+func mergePullRequest(gctx *gin.Context) {
+	type response struct {
+		PR       usecase.PullRequest
+		MergedAt string `json:"merged_at"`
+	}
+
+	conf.Logger.Debug(fmt.Sprintf("%s: merge PR request", conf.LogHeaders.HTTPServer))
+	var pr usecase.PullRequest
+	var err error
+	if err = gctx.ShouldBindJSON(&pr); err != nil {
+		conf.Logger.Error(fmt.Sprintf("%s: error on binding requst body: %v", conf.LogHeaders.HTTPServer, err))
+		gctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	var transactionTime time.Time
+	if transactionTime, err = pr.Merge(); err != nil {
+		conf.Logger.Error(fmt.Sprintf("%s: error on merging PR: %v", conf.LogHeaders.HTTPServer, err))
+		if errors.As(err, &usecase.ErrorPRNotFound) {
+			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
+				Code:    "NOT_FOUND",
+				Message: "resource not found",
+			}})
+			return
+		}
+		gctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	gctx.JSON(http.StatusOK, response{
+		PR:       pr,
+		MergedAt: transactionTime.Format("2006-01-02T15:04:05Z"),
+	})
+}
 
 func reassignPullRequest(gctx *gin.Context) {}
