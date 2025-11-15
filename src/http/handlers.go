@@ -101,7 +101,35 @@ func setActiveUser(gctx *gin.Context) {
 
 func getUsersRewie(gctx *gin.Context) {}
 
-func createPullRequest(gctx *gin.Context) {}
+func createPullRequest(gctx *gin.Context) {
+	conf.Logger.Debug(fmt.Sprintf("%s: create PR request", conf.LogHeaders.HTTPServer))
+	var pr usecase.PullRequest
+	var err error
+	if err = gctx.ShouldBindJSON(&pr); err != nil {
+		conf.Logger.Error(fmt.Sprintf("%s: error on binding requst body: %v", conf.LogHeaders.HTTPServer, err))
+		gctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if err = pr.Create(); err != nil {
+		conf.Logger.Error(fmt.Sprintf("%s: error on creation PR: %v", conf.LogHeaders.HTTPServer, err))
+		if errors.Is(err, usecase.ErrorAuthorTeamNotFound) {
+			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
+				Code:    "NOT_FOUND",
+				Message: "resource not found",
+			}})
+			return
+		}
+		if errors.As(err, &usecase.ErrorPRDuplication) {
+			gctx.JSON(http.StatusConflict, errorResponse{Error: errorBody{
+				Code:    "PR_EXISTS",
+				Message: "PR id already exists",
+			}})
+			return
+		}
+		gctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+}
 
 func mergePullRequest(gctx *gin.Context) {}
 
