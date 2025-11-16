@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -36,6 +37,8 @@ var (
 	ErrorPRNotFound         = errors.New("no rows in result set")
 	ErrorPRAuthorNotFound   = errors.New("can't scan into dest[3] (col: array_position): cannot scan NULL into *int64")
 	ErrorPRReassignMerge    = errors.New("PR has been merged")
+	ErrorInvalidAuthor      = errors.New("ОШИБКА: INSERT или UPDATE в таблице \"pull_requests\" нарушает ограничение внешнего ключа \"pull_requests_author_id_fkey\" (SQLSTATE 23503)")
+	ErrorNotAssigned        = errors.New("reviewer is not assigned to this PR")
 )
 
 func (pr *PullRequest) Create() (err error) {
@@ -80,7 +83,7 @@ func (pr *PullRequest) Merge() (transactionTime time.Time, err error) {
 	row = db.Connection.QueryRow(context.Background(),
 		"select pr_name, author_id, assigned_reviewers, merged_at, status from pull_requests where pr_id = $1", pr.PullRequestId)
 	if err = row.Scan(&pr.PullRequestName, &pr.AuthorId, &pr.AssignedReviewers, &transactionTime, &pr.Status); err != nil {
-		if !errors.Is(err, ErrorPRDidntMerged) {
+		if !strings.Contains(err.Error(), ErrorPRDidntMerged.Error()) {
 			err = fmt.Errorf("error on getting PR data: %w", err)
 			return
 		}
@@ -104,7 +107,7 @@ func (pr *PullRequest) Reassign(oldReviewerId string) (newReviewerId string, err
 	row = db.Connection.QueryRow(context.Background(),
 		`select author_id, status, team_id, array_position(assigned_reviewers, $1)
 		from pull_requests join users on pull_requests.author_id = users.user_id
-		where pr_id = $2`,
+		where pr_id = $2`, //  and assigned_reviewers && array[$1]
 		oldReviewerId, pr.PullRequestId)
 	var teamId, oldReviewerIndex int64
 	if err = row.Scan(&pr.AuthorId, &pr.Status, &teamId, &oldReviewerIndex); err != nil {

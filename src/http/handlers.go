@@ -32,7 +32,7 @@ func addTeam(gctx *gin.Context) {
 	}
 	if err := team.Add(); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on adding new team: %v", conf.LogHeaders.HTTPServer, err))
-		if errors.Is(err, usecase.ErrorTeamDuplication) {
+		if strings.Contains(err.Error(), usecase.ErrorTeamDuplication.Error()) {
 			gctx.JSON(http.StatusBadRequest, errorResponse{Error: errorBody{
 				Code:    "TEAM_EXIST",
 				Message: "team_name already exist",
@@ -89,7 +89,7 @@ func setActiveUser(gctx *gin.Context) {
 	fullUserData := response{TeamMember: user}
 	if fullUserData.TeamName, err = user.SetActive(); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on set active user: %v", conf.LogHeaders.HTTPServer, err))
-		if errors.Is(err, usecase.ErrorNotFound) {
+		if strings.Contains(err.Error(), usecase.ErrorNotFound.Error()) {
 			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
 				Code:    "NOT_FOUND",
 				Message: "resource not found",
@@ -142,14 +142,14 @@ func createPullRequest(gctx *gin.Context) {
 	}
 	if err = pr.Create(); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on creation PR: %v", conf.LogHeaders.HTTPServer, err))
-		if errors.Is(err, usecase.ErrorAuthorTeamNotFound) {
+		if errors.Is(err, usecase.ErrorAuthorTeamNotFound) || strings.Contains(err.Error(), usecase.ErrorInvalidAuthor.Error()) {
 			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
 				Code:    "NOT_FOUND",
 				Message: "resource not found",
 			}})
 			return
 		}
-		if errors.Is(err, usecase.ErrorPRDuplication) {
+		if strings.Contains(err.Error(), usecase.ErrorPRDuplication.Error()) {
 			gctx.JSON(http.StatusConflict, errorResponse{Error: errorBody{
 				Code:    "PR_EXISTS",
 				Message: "PR id already exists",
@@ -180,7 +180,7 @@ func mergePullRequest(gctx *gin.Context) {
 	var transactionTime time.Time
 	if transactionTime, err = pr.Merge(); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on merging PR: %v", conf.LogHeaders.HTTPServer, err))
-		if errors.Is(err, usecase.ErrorPRNotFound) {
+		if strings.Contains(err.Error(), usecase.ErrorPRNotFound.Error()) {
 			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
 				Code:    "NOT_FOUND",
 				Message: "resource not found",
@@ -241,6 +241,13 @@ func reassignPullRequest(gctx *gin.Context) {
 			}})
 			return
 		}
+		// if errors.Is(err, usecase.ErrorNotAssigned) {
+		// 	gctx.JSON(http.StatusConflict, errorResponse{Error: errorBody{
+		// 		Code:    "NOT_ASSIGNED",
+		// 		Message: "reviewer is not assigned to this PR",
+		// 	}})
+		// 	return
+		// }
 		if errors.Is(err, usecase.ErrorPRReassignMerge) {
 			gctx.JSON(http.StatusConflict, errorResponse{Error: errorBody{
 				Code:    "PR_MERGED",
