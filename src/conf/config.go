@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ServerHTTPServeSocket = "127.0.0.1:8080"
+	ServerHTTPServeSocket = "0.0.0.0:8080"
 
 	PSQLUser, PSQLPassword, PSQLDBName, PSQLSSLMode = "postgres", "postgres", "avito_pr_service", "disable"
 	PRReviewersMax                                  = 2
