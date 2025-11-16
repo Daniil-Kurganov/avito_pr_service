@@ -27,8 +27,8 @@ var (
 	ErrorNotFound        = errors.New("no rows in result set")
 )
 
-func (tm *TeamMember) add(teamId int64) (err error) {
-	if _, err = db.Connection.Exec(context.Background(),
+func (tm *TeamMember) add(ctxt context.Context, teamId int64) (err error) {
+	if _, err = db.Connection.Exec(ctxt,
 		"insert into users (user_id, username, team_id, is_active) values ($1, $2, $3, $4)",
 		tm.UserId, tm.Username, teamId, tm.IsActive); err != nil {
 		err = fmt.Errorf("error on inserting new user: %w", err)
@@ -36,8 +36,8 @@ func (tm *TeamMember) add(teamId int64) (err error) {
 	return
 }
 
-func (tm *TeamMember) SetActive() (teamName string, err error) {
-	if err = db.Connection.QueryRow(context.Background(),
+func (tm *TeamMember) SetActive(ctxt context.Context) (teamName string, err error) {
+	if err = db.Connection.QueryRow(ctxt,
 		`with updated as (
 			update users set is_active=$1 where user_id=$2 returning username, team_id
 		) select username, name from updated, teams where teams.id=updated.team_id`,
@@ -49,9 +49,9 @@ func (tm *TeamMember) SetActive() (teamName string, err error) {
 	return
 }
 
-func (tm *TeamMember) GetRewiew() (prData []ShortPullRequest, err error) {
+func (tm *TeamMember) GetRewiew(ctxt context.Context) (prData []ShortPullRequest, err error) {
 	var rows pgx.Rows
-	if rows, err = db.Connection.Query(context.Background(),
+	if rows, err = db.Connection.Query(ctxt,
 		"select pr_id, pr_name, author_id, status from pull_requests where assigned_reviewers @> $1", fmt.Sprintf("{\"%s\"}", tm.UserId)); err != nil {
 		err = fmt.Errorf("error on getting user's PR: %w", err)
 		return
@@ -68,19 +68,19 @@ func (tm *TeamMember) GetRewiew() (prData []ShortPullRequest, err error) {
 	return
 }
 
-func (t *Team) Add() (err error) {
+func (t *Team) Add(ctxt context.Context) (err error) {
 	var teamId int64
-	if err = db.Connection.QueryRow(context.Background(), "insert into teams (name) values ($1) returning id", t.TeamName).Scan(&teamId); err != nil {
+	if err = db.Connection.QueryRow(ctxt, "insert into teams (name) values ($1) returning id", t.TeamName).Scan(&teamId); err != nil {
 		return
 	}
 	for _, currentMember := range t.Members {
-		if err = currentMember.add(teamId); err != nil {
+		if err = currentMember.add(ctxt, teamId); err != nil {
 			conf.Logger.Error(fmt.Sprintf("%s: %v", conf.LogHeaders.Usecase, err))
 			break
 		}
 	}
 	if err != nil {
-		if _, err = db.Connection.Exec(context.Background(), "delete from teams where id=$1", teamId); err != nil {
+		if _, err = db.Connection.Exec(ctxt, "delete from teams where id=$1", teamId); err != nil {
 			conf.Logger.Error(fmt.Sprintf("%s: error on removing raw team by id = %d", conf.LogHeaders.Usecase, teamId))
 		}
 		return
@@ -89,9 +89,9 @@ func (t *Team) Add() (err error) {
 	return
 }
 
-func (t *Team) Get() (err error) {
+func (t *Team) Get(ctxt context.Context) (err error) {
 	var rows pgx.Rows
-	if rows, err = db.Connection.Query(context.Background(),
+	if rows, err = db.Connection.Query(ctxt,
 		"select user_id, username, is_active from users where team_id=(select id from teams where name=$1)", t.TeamName); err != nil {
 		err = fmt.Errorf("error on select data: %w", err)
 		return
