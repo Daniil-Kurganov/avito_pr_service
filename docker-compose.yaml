@@ -9,6 +9,7 @@ services:
       PSQL_USER: postgres
       PSQL_PASSWORD: postgres
       PSQL_DB_NAME: avito_pr_service
+      JWT_KEY: nX#6+*I2l#DO>_d3.!Bv_1D;C:1\dq(newD0XS+rSBYI&NAm5$
     depends_on:
       db:
         condition: service_healthy
