@@ -47,6 +47,15 @@ func addTeam(gctx *gin.Context) {
 
 func getTeam(gctx *gin.Context) {
 	conf.Logger.Debug(fmt.Sprintf("%s: get team request", conf.LogHeaders.HTTPServer))
+	role := authenticationRequest(gctx)
+	if !(role == roleAdmin || role == roleUser) {
+		conf.Logger.Error(fmt.Sprintf("%s: authorization falid", conf.LogHeaders.HTTPServer))
+		gctx.JSON(http.StatusUnauthorized, errorResponse{Error: errorBody{
+			Code:    "NOT_FOUND",
+			Message: "resource not found",
+		}})
+		return
+	}
 	var teamName string
 	var ok bool
 	if teamName, ok = gctx.GetQuery("team_name"); !ok {
@@ -74,11 +83,22 @@ func getTeam(gctx *gin.Context) {
 
 func setActiveUser(gctx *gin.Context) {
 	type response struct {
-		usecase.TeamMember
-		TeamName string `json:"team_name"`
+		User struct {
+			usecase.TeamMember
+			TeamName string `json:"team_name"`
+		} `json:"user"`
 	}
 
 	conf.Logger.Debug(fmt.Sprintf("%s: set user active request", conf.LogHeaders.HTTPServer))
+	role := authenticationRequest(gctx)
+	if role != roleAdmin {
+		conf.Logger.Error(fmt.Sprintf("%s: authorization falid", conf.LogHeaders.HTTPServer))
+		gctx.JSON(http.StatusUnauthorized, errorResponse{Error: errorBody{
+			Code:    "NOT_FOUND",
+			Message: "resource not found",
+		}})
+		return
+	}
 	var user usecase.TeamMember
 	var err error
 	if err = gctx.ShouldBindJSON(&user); err != nil {
@@ -86,8 +106,8 @@ func setActiveUser(gctx *gin.Context) {
 		gctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	fullUserData := response{TeamMember: user}
-	if fullUserData.TeamName, err = user.SetActive(gctx); err != nil {
+	fullUserData := response{}
+	if fullUserData.User.TeamName, err = user.SetActive(gctx); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on set active user: %v", conf.LogHeaders.HTTPServer, err))
 		if strings.Contains(err.Error(), usecase.ErrorNotFound.Error()) {
 			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
@@ -98,6 +118,7 @@ func setActiveUser(gctx *gin.Context) {
 		}
 		return
 	}
+	fullUserData.User.TeamMember = user
 	gctx.JSON(http.StatusOK, fullUserData)
 }
 
@@ -108,6 +129,15 @@ func getUsersRewie(gctx *gin.Context) {
 	}
 
 	conf.Logger.Debug(fmt.Sprintf("%s: get user's PR requets", conf.LogHeaders.HTTPServer))
+	role := authenticationRequest(gctx)
+	if !(role == roleAdmin || role == roleUser) {
+		conf.Logger.Error(fmt.Sprintf("%s: authorization falid", conf.LogHeaders.HTTPServer))
+		gctx.JSON(http.StatusUnauthorized, errorResponse{Error: errorBody{
+			Code:    "NOT_FOUND",
+			Message: "resource not found",
+		}})
+		return
+	}
 	var userId string
 	var ok bool
 	if userId, ok = gctx.GetQuery("user_id"); !ok {
@@ -133,6 +163,15 @@ func createPullRequest(gctx *gin.Context) {
 	}
 
 	conf.Logger.Debug(fmt.Sprintf("%s: create PR request", conf.LogHeaders.HTTPServer))
+	role := authenticationRequest(gctx)
+	if role != roleAdmin {
+		conf.Logger.Error(fmt.Sprintf("%s: authorization falid", conf.LogHeaders.HTTPServer))
+		gctx.JSON(http.StatusUnauthorized, errorResponse{Error: errorBody{
+			Code:    "NOT_FOUND",
+			Message: "resource not found",
+		}})
+		return
+	}
 	var pr usecase.PullRequest
 	var err error
 	if err = gctx.ShouldBindJSON(&pr); err != nil {
@@ -170,6 +209,15 @@ func mergePullRequest(gctx *gin.Context) {
 	}
 
 	conf.Logger.Debug(fmt.Sprintf("%s: merge PR request", conf.LogHeaders.HTTPServer))
+	role := authenticationRequest(gctx)
+	if role != roleAdmin {
+		conf.Logger.Error(fmt.Sprintf("%s: authorization falid", conf.LogHeaders.HTTPServer))
+		gctx.JSON(http.StatusUnauthorized, errorResponse{Error: errorBody{
+			Code:    "NOT_FOUND",
+			Message: "resource not found",
+		}})
+		return
+	}
 	var pr usecase.PullRequest
 	var err error
 	if err = gctx.ShouldBindJSON(&pr); err != nil {
@@ -209,6 +257,15 @@ func reassignPullRequest(gctx *gin.Context) {
 	)
 
 	conf.Logger.Debug(fmt.Sprintf("%s: reassign PR request", conf.LogHeaders.HTTPServer))
+	role := authenticationRequest(gctx)
+	if role != roleAdmin {
+		conf.Logger.Error(fmt.Sprintf("%s: authorization falid", conf.LogHeaders.HTTPServer))
+		gctx.JSON(http.StatusUnauthorized, errorResponse{Error: errorBody{
+			Code:    "NOT_FOUND",
+			Message: "resource not found",
+		}})
+		return
+	}
 	var err error
 	var req request
 	if err = gctx.ShouldBindJSON(&req); err != nil {

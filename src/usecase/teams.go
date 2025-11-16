@@ -38,9 +38,8 @@ func (tm *TeamMember) add(ctxt context.Context, teamId int64) (err error) {
 
 func (tm *TeamMember) SetActive(ctxt context.Context) (teamName string, err error) {
 	if err = db.Connection.QueryRow(ctxt,
-		`with updated as (
-			update users set is_active=$1 where user_id=$2 returning username, team_id
-		) select username, name from updated, teams where teams.id=updated.team_id`,
+		`with updated as (update users set is_active=$1 where user_id=$2 returning username, team_id)
+		select username, name from updated, teams where teams.id=updated.team_id`,
 		tm.IsActive, tm.UserId).
 		Scan(&tm.Username, &teamName); err != nil {
 		err = fmt.Errorf("error on updation user action: %w", err)

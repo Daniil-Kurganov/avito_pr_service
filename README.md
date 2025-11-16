@@ -2,6 +2,12 @@
 ## Зпуск
 Для запуска выполните `docker-compose up --build` в корне проекта. После успешного старта, API будет доступно по адресу `http://127.0.0.1:8080/...`.
 ## Вопросы и самостоятельно приянтые решения
+### Авторизация
+В качестве метода авторизации был выбран JWT основанный на Bearer Token Authentication (OAuth 2.0). Заголовок запроса, соответствующий авторизации по API, должен содержать _Authorization_-заголовок вида `Bearer [token]`.
+
+Токены (выводятся в логах при запуске HTTP-сервера):
+- "admin": `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3JvbGUiOiJhZG1pbiJ9.IzWal8f8t3AmpenfNmBsq6nUq-0AMvVn36A8W1grLOs`;
+- "user": `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3JvbGUiOiJ1c2VyIn0.gnof3_T7gEJrbZOW6ys1Jj8zS-cTL8ay9a0FSIeCYgU`.
 ### Логгирование
 Логирование инициализируется на уровне "Debug" и выводится в консоль.
 ### API и валидация запросов

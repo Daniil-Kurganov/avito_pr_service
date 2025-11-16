@@ -3,11 +3,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"time"
 )
+
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3JvbGUiOiJhZG1pbiJ9.IzWal8f8t3AmpenfNmBsq6nUq-0AMvVn36A8W1grLOs"
 
 func main() {
 	// newTeam := usecase.Team{ // team/add
@@ -39,7 +42,7 @@ func main() {
 		IsActive bool   `json:"is_active"`
 	}{
 		UserID:   "u2",
-		IsActive: false,
+		IsActive: true,
 	}
 
 	// prCreation := struct { // pullRequest/create
@@ -76,6 +79,7 @@ func main() {
 		log.Fatalf("Error on creation request: %v", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	client := &http.Client{Timeout: 5 * time.Second}
 	var response *http.Response
 	if response, err = client.Do(request); err != nil {
