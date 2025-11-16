@@ -14,16 +14,19 @@ func main() {
 	// 	TeamName: "games",
 	// 	Members: []usecase.TeamMember{
 	// 		{
+
 	// 			UserId:   "u1",
 	// 			Username: "Max",
 	// 			IsActive: true,
 	// 		},
 	// 		{
+
 	// 			UserId:   "u2",
 	// 			Username: "Victor",
 	// 			IsActive: true,
 	// 		},
 	// 		{
+
 	// 			UserId:   "u3",
 	// 			Username: "Wiliam",
 	// 			IsActive: true,
