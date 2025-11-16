@@ -41,9 +41,9 @@ var (
 	ErrorNotAssigned        = errors.New("reviewer is not assigned to this PR")
 )
 
-func (pr *PullRequest) Create() (err error) {
+func (pr *PullRequest) Create(ctxt context.Context) (err error) {
 	var rows pgx.Rows
-	if rows, err = db.Connection.Query(context.Background(),
+	if rows, err = db.Connection.Query(ctxt,
 		`select user_id 
 		from users 
 		where user_id != $1 and is_active = true and 
@@ -78,9 +78,9 @@ func (pr *PullRequest) Create() (err error) {
 	return
 }
 
-func (pr *PullRequest) Merge() (transactionTime time.Time, err error) {
+func (pr *PullRequest) Merge(ctxt context.Context) (transactionTime time.Time, err error) {
 	var row pgx.Row
-	row = db.Connection.QueryRow(context.Background(),
+	row = db.Connection.QueryRow(ctxt,
 		"select pr_name, author_id, assigned_reviewers, merged_at, status from pull_requests where pr_id = $1", pr.PullRequestId)
 	if err = row.Scan(&pr.PullRequestName, &pr.AuthorId, &pr.AssignedReviewers, &transactionTime, &pr.Status); err != nil {
 		if !strings.Contains(err.Error(), ErrorPRDidntMerged.Error()) {
@@ -91,7 +91,7 @@ func (pr *PullRequest) Merge() (transactionTime time.Time, err error) {
 	if pr.Status == mergedStatus {
 		return
 	}
-	row = db.Connection.QueryRow(context.Background(),
+	row = db.Connection.QueryRow(ctxt,
 		"update pull_requests set status = $1, merged_at = NOW() where pr_id = $2 returning merged_at",
 		mergedStatus, pr.PullRequestId)
 	if err = row.Scan(&transactionTime); err != nil {
@@ -102,9 +102,9 @@ func (pr *PullRequest) Merge() (transactionTime time.Time, err error) {
 	return
 }
 
-func (pr *PullRequest) Reassign(oldReviewerId string) (newReviewerId string, err error) {
+func (pr *PullRequest) Reassign(ctxt context.Context, oldReviewerId string) (newReviewerId string, err error) {
 	var row pgx.Row
-	row = db.Connection.QueryRow(context.Background(),
+	row = db.Connection.QueryRow(ctxt,
 		`select author_id, status, team_id, array_position(assigned_reviewers, $1)
 		from pull_requests join users on pull_requests.author_id = users.user_id
 		where pr_id = $2`, //  and assigned_reviewers && array[$1]
@@ -118,7 +118,7 @@ func (pr *PullRequest) Reassign(oldReviewerId string) (newReviewerId string, err
 		err = ErrorPRReassignMerge
 		return
 	}
-	row = db.Connection.QueryRow(context.Background(),
+	row = db.Connection.QueryRow(ctxt,
 		`select user_id
 		from users
 		where is_active = true and team_id = $1 and
@@ -130,7 +130,7 @@ func (pr *PullRequest) Reassign(oldReviewerId string) (newReviewerId string, err
 		err = fmt.Errorf("error on selecting new reviewer: %w", err)
 		return
 	}
-	row = db.Connection.QueryRow(context.Background(),
+	row = db.Connection.QueryRow(ctxt,
 		"update pull_requests set assigned_reviewers[$1] = $2 where pr_id = $3 returning pr_name, assigned_reviewers",
 		oldReviewerIndex, newReviewerId, pr.PullRequestId)
 	if err = row.Scan(&pr.PullRequestName, &pr.AssignedReviewers); err != nil {

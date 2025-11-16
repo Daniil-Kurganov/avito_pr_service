@@ -30,7 +30,7 @@ func addTeam(gctx *gin.Context) {
 		gctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	if err := team.Add(); err != nil {
+	if err := team.Add(gctx); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on adding new team: %v", conf.LogHeaders.HTTPServer, err))
 		if strings.Contains(err.Error(), usecase.ErrorTeamDuplication.Error()) {
 			gctx.JSON(http.StatusBadRequest, errorResponse{Error: errorBody{
@@ -56,7 +56,7 @@ func getTeam(gctx *gin.Context) {
 		return
 	}
 	team := usecase.Team{TeamName: teamName}
-	if err := team.Get(); err != nil {
+	if err := team.Get(gctx); err != nil {
 		conf.Logger.Error("%s: error on getting team data: %v", conf.LogHeaders.HTTPServer, err)
 		gctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -87,7 +87,7 @@ func setActiveUser(gctx *gin.Context) {
 		return
 	}
 	fullUserData := response{TeamMember: user}
-	if fullUserData.TeamName, err = user.SetActive(); err != nil {
+	if fullUserData.TeamName, err = user.SetActive(gctx); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on set active user: %v", conf.LogHeaders.HTTPServer, err))
 		if strings.Contains(err.Error(), usecase.ErrorNotFound.Error()) {
 			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
@@ -119,7 +119,7 @@ func getUsersRewie(gctx *gin.Context) {
 	user := usecase.TeamMember{UserId: userId}
 	userPRData := response{UserId: userId}
 	var err error
-	if userPRData.PullRequests, err = user.GetRewiew(); err != nil {
+	if userPRData.PullRequests, err = user.GetRewiew(gctx); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: %v", conf.LogHeaders.HTTPServer, err))
 		gctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -140,7 +140,7 @@ func createPullRequest(gctx *gin.Context) {
 		gctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	if err = pr.Create(); err != nil {
+	if err = pr.Create(gctx); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on creation PR: %v", conf.LogHeaders.HTTPServer, err))
 		if errors.Is(err, usecase.ErrorAuthorTeamNotFound) || strings.Contains(err.Error(), usecase.ErrorInvalidAuthor.Error()) {
 			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
@@ -178,7 +178,7 @@ func mergePullRequest(gctx *gin.Context) {
 		return
 	}
 	var transactionTime time.Time
-	if transactionTime, err = pr.Merge(); err != nil {
+	if transactionTime, err = pr.Merge(gctx); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on merging PR: %v", conf.LogHeaders.HTTPServer, err))
 		if strings.Contains(err.Error(), usecase.ErrorPRNotFound.Error()) {
 			gctx.JSON(http.StatusNotFound, errorResponse{Error: errorBody{
@@ -218,7 +218,7 @@ func reassignPullRequest(gctx *gin.Context) {
 	}
 	pr := usecase.PullRequest{PullRequestId: req.PullRequestId}
 	var newReviewerId string
-	if newReviewerId, err = pr.Reassign(req.OldReviewerId); err != nil {
+	if newReviewerId, err = pr.Reassign(gctx, req.OldReviewerId); err != nil {
 		conf.Logger.Error(fmt.Sprintf("%s: error on reasign PR: %v", conf.LogHeaders.HTTPServer, err))
 		if strings.Contains(err.Error(), fmt.Sprintf("error on selecting new reviewer: %s", usecase.ErrorNotFound.Error())) {
 			gctx.JSON(http.StatusConflict, errorResponse{Error: errorBody{
@@ -241,13 +241,6 @@ func reassignPullRequest(gctx *gin.Context) {
 			}})
 			return
 		}
-		// if errors.Is(err, usecase.ErrorNotAssigned) {
-		// 	gctx.JSON(http.StatusConflict, errorResponse{Error: errorBody{
-		// 		Code:    "NOT_ASSIGNED",
-		// 		Message: "reviewer is not assigned to this PR",
-		// 	}})
-		// 	return
-		// }
 		if errors.Is(err, usecase.ErrorPRReassignMerge) {
 			gctx.JSON(http.StatusConflict, errorResponse{Error: errorBody{
 				Code:    "PR_MERGED",

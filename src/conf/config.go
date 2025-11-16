@@ -8,8 +8,7 @@ import (
 const (
 	ServerHTTPServeSocket = "0.0.0.0:8080"
 
-	PSQLUser, PSQLPassword, PSQLDBName, PSQLSSLMode = "postgres", "postgres", "avito_pr_service", "disable"
-	PRReviewersMax                                  = 2
+	PRReviewersMax = 2
 )
 
 var (
@@ -31,6 +30,8 @@ var (
 		PSQL:       "[PostgreSQL]",
 		Usecase:    "[Usecase]",
 	}
+
+	PSQLUser, PSQLPassword, PSQLDBName = os.Getenv("PSQL_USER"), os.Getenv("PSQL_PASSWORD"), os.Getenv("PSQL_DB_NAME")
 )
 
 func init() {
