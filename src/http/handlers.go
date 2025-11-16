@@ -128,6 +128,10 @@ func getUsersRewie(gctx *gin.Context) {
 }
 
 func createPullRequest(gctx *gin.Context) {
+	type response struct {
+		PR usecase.PullRequest `json:"pr"`
+	}
+
 	conf.Logger.Debug(fmt.Sprintf("%s: create PR request", conf.LogHeaders.HTTPServer))
 	var pr usecase.PullRequest
 	var err error
@@ -155,6 +159,8 @@ func createPullRequest(gctx *gin.Context) {
 		gctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	resp := response{PR: pr}
+	gctx.JSON(http.StatusOK, resp)
 }
 
 func mergePullRequest(gctx *gin.Context) {

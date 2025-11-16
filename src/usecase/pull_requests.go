@@ -61,14 +61,14 @@ func (pr *PullRequest) Create() (err error) {
 		teammatesArray = fmt.Sprintf(`%s"%s",`, teammatesArray, currentUserId)
 		teammetesCounter++
 	}
-	if teammetesCounter == 0 {
-		err = fmt.Errorf("%w", ErrorAuthorTeamNotFound)
-		return
-	}
 	teammatesArray = fmt.Sprintf("%s}", teammatesArray[:len(teammatesArray)-1])
-	if _, err = db.Connection.Exec(context.Background(),
-		`insert into pull_requests (pr_id, pr_name, author_id, assigned_reviewers) values ($1, $2, $3, $4)`,
-		pr.PullRequestId, pr.PullRequestName, pr.AuthorId, teammatesArray); err != nil {
+	if teammetesCounter == 0 {
+		teammatesArray = "{}"
+	}
+	row := db.Connection.QueryRow(context.Background(),
+		`insert into pull_requests (pr_id, pr_name, author_id, assigned_reviewers) values ($1, $2, $3, $4) returning status, assigned_reviewers`,
+		pr.PullRequestId, pr.PullRequestName, pr.AuthorId, teammatesArray)
+	if err = row.Scan(&pr.Status, &pr.AssignedReviewers); err != nil {
 		err = fmt.Errorf("error on inserting new PR data: %w", err)
 		return
 	}
