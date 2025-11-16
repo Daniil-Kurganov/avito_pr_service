@@ -51,8 +51,6 @@ func StartHTTPServer() {
 		if err := listener.Close(); err != nil {
 			conf.Logger.Error(fmt.Sprintf("Error on closing HTTP-server: %v", err))
 		}
-		if err := db.CloseConnection(); err != nil {
-			conf.Logger.Error(fmt.Sprintf("Error on closing DB connection: %v", err))
-		}
+		db.Connection.Close()
 	}()
 }

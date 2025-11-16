@@ -20,13 +20,11 @@ type (
 		TeamName string       `json:"team_name" binding:"required"`
 		Members  []TeamMember `json:"members" binding:"required"`
 	}
-
-	customError error
 )
 
 var (
-	ErrorTeamDuplication customError = errors.New("ОШИБКА: повторяющееся значение ключа нарушает ограничение уникальности \"teams_name_key\" (SQLSTATE 23505)")
-	ErrorNotFound        customError = errors.New("no rows in result set")
+	ErrorTeamDuplication = errors.New("ОШИБКА: повторяющееся значение ключа нарушает ограничение уникальности \"teams_name_key\" (SQLSTATE 23505)")
+	ErrorNotFound        = errors.New("no rows in result set")
 )
 
 func (tm *TeamMember) add(teamId int64) (err error) {

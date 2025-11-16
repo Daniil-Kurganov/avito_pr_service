@@ -8,4 +8,5 @@ import (
 func main() {
 	db.Connect()
 	http.StartHTTPServer()
+	defer db.Connection.Close()
 }

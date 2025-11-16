@@ -11,16 +11,21 @@ import (
 
 func main() {
 	// newTeam := usecase.Team{ // team/add
-	// 	TeamName: "building",
+	// 	TeamName: "architecture",
 	// 	Members: []usecase.TeamMember{
 	// 		{
-	// 			UserId:   "u3",
-	// 			Username: "Sofia",
+	// 			UserId:   "u5",
+	// 			Username: "Max",
 	// 			IsActive: true,
 	// 		},
 	// 		{
-	// 			UserId:   "u4",
-	// 			Username: "Mark",
+	// 			UserId:   "u6",
+	// 			Username: "Victor",
+	// 			IsActive: true,
+	// 		},
+	// 		{
+	// 			UserId:   "u7",
+	// 			Username: "Wiliam",
 	// 			IsActive: true,
 	// 		},
 	// 	},
@@ -40,23 +45,31 @@ func main() {
 	// 	AuthorId        string `json:"author_id"`
 	// }{
 	// 	PullRequestId:   "pr-3",
-	// 	PullRequestName: "Pay cards",
-	// 	AuthorId:        "u2",
+	// 	PullRequestName: "New app",
+	// 	AuthorId:        "u6",
 	// }
 
-	prMerge := struct { // pullRequest/merge
+	// prMerge := struct { // pullRequest/merge
+	// 	PullRequestId string `json:"pull_request_id"`
+	// }{
+	// 	PullRequestId: "pr-3",
+	// }
+
+	prReassing := struct { // pullRequest/reassign
 		PullRequestId string `json:"pull_request_id"`
+		OldReviewerId string `json:"old_reviewer_id"`
 	}{
-		PullRequestId: "pr-3",
+		PullRequestId: "pr-1",
+		OldReviewerId: "u2",
 	}
 
 	var newData []byte
 	var err error
-	if newData, err = json.Marshal(prMerge); err != nil {
+	if newData, err = json.Marshal(prReassing); err != nil {
 		log.Fatalf("Error on marshaling data: %v", err)
 	}
 	var request *http.Request
-	if request, err = http.NewRequest("POST", "http://127.0.0.1:8080/pullRequest/merge", bytes.NewBuffer(newData)); err != nil {
+	if request, err = http.NewRequest("POST", "http://127.0.0.1:8080/pullRequest/reassign", bytes.NewBuffer(newData)); err != nil {
 		log.Fatalf("Error on creation request: %v", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
