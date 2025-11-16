@@ -14,7 +14,7 @@ const TeamNameLenght = 50
 var Connection *pgxpool.Pool
 
 func Connect() {
-	connectionURL := fmt.Sprintf("postgres://%s:%s@localhost:5433/%s",
+	connectionURL := fmt.Sprintf("postgres://%s:%s@db:5432/%s?sslmode=disable",
 		conf.PSQLUser, conf.PSQLPassword, conf.PSQLDBName)
 	var err error
 	if Connection, err = pgxpool.New(context.Background(), connectionURL); err != nil {
